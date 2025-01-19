@@ -1,21 +1,186 @@
-import { StatusBar } from 'expo-status-bar';
+import { View, Text, Image, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
+import { useNavigation } from '@react-navigation/native'; // Correct import
 
-export default function App() {
+
+const members = [
+  { name: 'CHOI HYUNSUK', image: require('./assets/hyunsuk.jpg') },
+  { name: 'PARK JIHOON', image: require('./assets/jihoon.jpg') },
+  { name: 'KIM JUNKYU', image: require('./assets/junkyu.jpg') },
+  { name: 'YOSHINORI', image: require('./assets/yoshi.jpg') },
+  { name: 'ASAHI', image: require('./assets/asahi.jpg') },
+  { name: 'YOON JAEHYUK', image: require('./assets/jaehyuk.jpg') },
+  { name: 'PARK JEONGWOO', image: require('./assets/jeongwoo.jpg') },
+  { name: 'HARUTO', image: require('./assets/haruto.jpg') },
+  { name: 'KIM DOYOUNG', image: require('./assets/doyoung.jpg') },
+  { name: 'SO JUNGHWAN', image: require('./assets/junghwan.jpg') },
+];
+
+const HomeScreen = () => {
+  const navigation = useNavigation();
+
   return (
     <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
-      <StatusBar style="auto" />
+      {/* Header */}
+      <View style={styles.header}>
+        <Image
+          source={require('./assets/group-photo.jpg')}
+          style={styles.groupImage}
+        />
+        <Text style={styles.title}>TREASURE MEMBERS</Text>
+      </View>
+
+      {/* Scrollable List */}
+      <ScrollView contentContainerStyle={styles.membersList}>
+        {members.map((member, index) => (
+          <TouchableOpacity
+            key={index}
+            style={styles.memberItem}
+            onPress={() =>
+              navigation.navigate('MemberDetails', { member })
+            }
+          >
+            <Image source={member.image} style={styles.memberImage} />
+            <Text style={styles.memberName}>{member.name}</Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
     </View>
   );
-}
+};
+
+const MemberDetailsScreen = ({ route }) => {
+  const { member } = route.params;
+
+  // Set a default description and customize for each member
+  let description = 'No description available'; // Default description
+
+  if (member.name === 'CHOI HYUNSUK') {
+    description = `Stage / Birth Name: Choi Hyun-suk (최현석)\nEnglish Name: Danny Choi\nPosition(s): Main Dancer, Main Rapper, Vocalist \nBirthday: April 21st, 1999 \nZodiac Sign: Taurus \nChinese Zodiac Sign: Rabbit \nHeight: 171 cm (5’7”) \nWeight: 58 kg (128 lbs) \nBlood Type: A \nMBTI Type: ENFP \nNationality: Korean`;
+  } else if (member.name === 'PARK JIHOON') {
+    description = 'Stage Name: Jihoon (지훈) \nBirth Name: Park Jihoon (박지훈) \nEnglish Name: Jun Park \nPosition(s): Main Dancer, Lead Vocalist \nBirthday: March 14th, 2000 \nZodiac Sign: Pisces \nChinese Zodiac Sign: Dragon \nHeight: 178 cm (5’10”) \nWeight: 69 kg (152 lbs) \nBlood Type: B \nMBTI Type: ENTJ \nNationality: Korean';
+  } else if (member.name === 'KIM JUNKYU') {
+    description = 'Stage Name: Junkyu \nBirth Name: Kim Junkyu (김준규) \nEnglish Name: David Kim \nPosition(s): Leader, Main or Lead Vocalist, Visual \nBirthday: September 9th, 2000 \nZodiac Sign: Virgo \nChinese Zodiac Sign: Dragon \nHeight: 178 cm (5’10″) \nWeight: 65 kg (143 lbs) \nBlood Type: O \nMBTI Type: INFJ \nNationality: Korean';
+  } else if (member.name === 'YOSHINORI') {
+    description = 'Stage Name: Yoshi (요시) \nBirth Name: Kanemoto Yoshinori (金本芳典) \nKorean Name: Kim Bang-jeon (김방전) \nEnglish Name: Jaden Kanemoto / Jaden Kim \nPosition(s): Main Rapper \nBirthday: May 15th, 2000 \nZodiac Sign: Taurus \nChinese Zodiac Sign: Dragon \nHeight: 179 cm (5’10.5″) \nWeight: 59 kg (130 lbs) \nBlood Type: A \nMBTI Type: INFP \nNationality: Japanese';
+  } else if (member.name === 'ASAHI') {
+    description = 'Stage Name: Asahi (아사히) \nBirth Name: Hamada Asahi (浜田朝光) \nEnglish Name: Arthur Hamada \nPosition(s): Leader, Vocalist, Visual \nBirthday: August 20th, 2001 \nZodiac Sign: Leo \nChinese Zodiac Sign: Snake \nHeight: 172 cm (5’7.5″) \nWeight: 53 kg (117 lbs) \nBlood Type: AB \nMBTI Type: INFP \nNationality: Japanese';
+  } else if (member.name === 'YOON JAEHYUK') {
+    description = 'Stage / Birth Name: Yoon Jae-hyuk (윤재혁) \nEnglish Name: Kevin Yoon \nPosition(s): Vocalist \nBirthday: July 23rd, 2001 \nZodiac Sign: Leo \nChinese Zodiac Sign: Snake \nHeight: 178 cm (5’10″) \nWeight: 63 kg (139 lbs) \nBlood Type: O \nMBTI Type: INFP \nNationality: Korean';
+  } else if (member.name === 'PARK JEONGWOO') {
+    description = 'Stage / Birth Name: Park Jeong-woo (박정우) \nEnglish Name: Justin Park \nPosition(s): Main Vocalist \nBirthday: September 28th, 2004 \nZodiac Sign: Libra \nChinese Zodiac Sign: Monkey \nHeight: 181 cm (5’11″) \nWeight: 70 kg (154 lbs) \nBlood Type: O \nMBTI Type: ISFP \nNationality: Korean';
+  } else if (member.name === 'HARUTO') {
+    description = 'Stage Name: Haruto (하루토) \nBirth Name: Watanabe Haruto (渡辺春虎) \nEnglish Name: Travis Watanabe \nPosition(s): Main Rapper, Visual \nBirthday: April 5th, 2004 \nZodiac Sign: Aries \nChinese Zodiac Sign: Monkey \nHeight: 183.2 cm (6’0″) \nWeight: 68-70kg (147-149 lbs) \nBlood Type: B \nMBTI Type: ISFP \nNationality: Japanese';
+  } else if (member.name === 'KIM DOYOUNG') {
+    description = 'Stage Name: Doyoung (도영) \nBirth Name: Kim Do-young (김도영) \nPosition(s): Main Dancer, Vocalist \nBirthday: December 4th, 2003 \nZodiac Sign: Sagittarius \nChinese Zodiac Sign: Goat \nHeight: 177 cm (5’10″) \nWeight: 58 kg (128 lbs) \nBlood Type: B \nMBTI Type: ENTJ \nNationality: Korean';
+  } else if (member.name === 'SO JUNGHWAN') {
+    description = 'Stage / Birth Name: So Jung-hwan (소정환) \nEnglish Name: John So \nPosition(s): Lead Dancer, Vocalist, Maknae \nBirthday: February 18th, 2005 \nZodiac Sign: Aquarius \nChinese Zodiac Sign: Rooster \nHeight: 180.3 cm (5’11″) \nWeight: 67 kg (147 lbs) \nBlood Type: B \nMBTI Type: ENFP-T \nNationality: Korean';
+  }
+  
+  return ( 
+    // Wrap the content in a ScrollView to make it scrollable
+    <ScrollView contentContainerStyle={styles.detailsContainer}>
+      <View style={styles.detailsContainer}>
+        <Image source={member.image} style={styles.detailImage} />
+        <Text style={styles.detailName}>{member.name}</Text>
+        <Text style={styles.detailDescription}>{description}</Text>
+      </View>
+    </ScrollView>
+  );
+};
+
+
+const Stack = createStackNavigator();
+
+const App = () => {
+  return (
+    <NavigationContainer>
+      <Stack.Navigator screenOptions={{
+          headerTintColor: '#003d4d', 
+        }}>
+        <Stack.Screen name="Home" component={HomeScreen} options={{ title: 'TREASURE' }} />
+        <Stack.Screen name="MemberDetails" component={MemberDetailsScreen} options={{ title: 'Member Details' }} />
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#003d4d',
     alignItems: 'center',
-    justifyContent: 'center',
+    paddingTop: 20,
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  groupImage: {
+    width: 300,
+    height: 200,
+    borderRadius: 10,
+    resizeMode: 'cover',
+  },
+  title: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginTop: 20,
+  },
+  membersList: {
+    paddingBottom: 20,
+  },
+  memberItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#add8e6',
+    padding: 10,
+    marginVertical: 5,
+    borderRadius: 10,
+    width: 320,
+  },
+  memberImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    marginRight: 10,
+    resizeMode: 'cover',
+  },
+  memberName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#000',
+  },
+  detailsContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    backgroundColor: '#003d4d', // Background color for the screen
+    padding: 20,
+  },
+  detailImage: {
+    width: 150,  // Adjusted size for the image
+    height: 150, // Adjusted size for the image
+    borderRadius: 75, // Make it circular
+    marginBottom: 20,
+    resizeMode: 'cover', // Ensures the image fits well
+  },
+  detailName: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 10,
+  },
+  detailDescription: {
+    fontSize: 16,
+    color: '#fff',
+    textAlign: 'left', // Center the text
+    marginTop: 5,
+    lineHeight: 30, // Optional: Adds spacing between lines
   },
 });
+
+export default App;
