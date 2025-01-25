@@ -1,8 +1,8 @@
-import { View, Text, Image, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, Image, ScrollView, StyleSheet, TouchableOpacity, ImageBackground } from 'react-native';
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import { useNavigation } from '@react-navigation/native'; // Correct import
+import { useNavigation } from '@react-navigation/native'; 
 
 
 const members = [
@@ -22,40 +22,43 @@ const HomeScreen = () => {
   const navigation = useNavigation();
 
   return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Image
-          source={require('./assets/group-photo.jpg')}
-          style={styles.groupImage}
-        />
-        <Text style={styles.title}>TREASURE MEMBERS</Text>
-      </View>
+    <ImageBackground
+      source={require('./assets/background.jpg')} 
+      style={styles.backgroundImage}
+      blurRadius={5}
+    >
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Image
+            source={require('./assets/group-photo.jpg')}
+            style={styles.groupImage}
+          />
+          <Text style={styles.title}>TREASURE MEMBERS</Text>
+        </View>
 
-      {/* Scrollable List */}
-      <ScrollView contentContainerStyle={styles.membersList}>
-        {members.map((member, index) => (
-          <TouchableOpacity
-            key={index}
-            style={styles.memberItem}
-            onPress={() =>
-              navigation.navigate('MemberDetails', { member })
-            }
-          >
-            <Image source={member.image} style={styles.memberImage} />
-            <Text style={styles.memberName}>{member.name}</Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-    </View>
+        <ScrollView contentContainerStyle={styles.membersList}>
+          {members.map((member, index) => (
+            <TouchableOpacity
+              key={index}
+              style={styles.memberItem}
+              onPress={() =>
+                navigation.navigate('MemberDetails', { member })
+              }
+            >
+              <Image source={member.image} style={styles.memberImage} />
+              <Text style={styles.memberName}>{member.name}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+    </ImageBackground>
   );
 };
 
 const MemberDetailsScreen = ({ route }) => {
   const { member } = route.params;
-
-  // Set a default description and customize for each member
-  let description = 'No description available'; // Default description
+  
+  let description = 'No description available'; 
 
   if (member.name === 'CHOI HYUNSUK') {
     description = `Stage / Birth Name: Choi Hyun-suk (최현석)\nEnglish Name: Danny Choi\nPosition(s): Main Dancer, Main Rapper, Vocalist \nBirthday: April 21st, 1999 \nZodiac Sign: Taurus \nChinese Zodiac Sign: Rabbit \nHeight: 171 cm (5’7”) \nWeight: 58 kg (128 lbs) \nBlood Type: A \nMBTI Type: ENFP \nNationality: Korean`;
@@ -79,15 +82,18 @@ const MemberDetailsScreen = ({ route }) => {
     description = 'Stage / Birth Name: So Jung-hwan (소정환) \nEnglish Name: John So \nPosition(s): Lead Dancer, Vocalist, Maknae \nBirthday: February 18th, 2005 \nZodiac Sign: Aquarius \nChinese Zodiac Sign: Rooster \nHeight: 180.3 cm (5’11″) \nWeight: 67 kg (147 lbs) \nBlood Type: B \nMBTI Type: ENFP-T \nNationality: Korean';
   }
   
-  return ( 
-    // Wrap the content in a ScrollView to make it scrollable
-    <ScrollView contentContainerStyle={styles.detailsContainer}>
-      <View style={styles.detailsContainer}>
+  return (
+    <ImageBackground
+      source={require('./assets/background.jpg')} 
+      style={styles.backgroundImage}
+      blurRadius={5} 
+    >
+      <ScrollView contentContainerStyle={styles.detailsContainer}>
         <Image source={member.image} style={styles.detailImage} />
         <Text style={styles.detailName}>{member.name}</Text>
         <Text style={styles.detailDescription}>{description}</Text>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </ImageBackground>
   );
 };
 
@@ -98,7 +104,7 @@ const App = () => {
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{
-          headerTintColor: '#003d4d', 
+          headerTintColor: '#000', 
         }}>
         <Stack.Screen name="Home" component={HomeScreen} options={{ title: 'TREASURE' }} />
         <Stack.Screen name="MemberDetails" component={MemberDetailsScreen} options={{ title: 'Member Details' }} />
@@ -110,7 +116,7 @@ const App = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#003d4d',
+    backgroundColor: 'transparent', 
     alignItems: 'center',
     paddingTop: 20,
   },
@@ -136,7 +142,7 @@ const styles = StyleSheet.create({
   memberItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#add8e6',
+    backgroundColor: 'rgba(255, 255, 255, 0.5)', 
     padding: 10,
     marginVertical: 5,
     borderRadius: 10,
@@ -154,19 +160,12 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#000',
   },
-  detailsContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    backgroundColor: '#003d4d', // Background color for the screen
-    padding: 20,
-  },
   detailImage: {
-    width: 150,  // Adjusted size for the image
-    height: 150, // Adjusted size for the image
-    borderRadius: 75, // Make it circular
+    width: 150,  
+    height: 150, 
+    borderRadius: 75, 
     marginBottom: 20,
-    resizeMode: 'cover', // Ensures the image fits well
+    resizeMode: 'cover', 
   },
   detailName: {
     fontSize: 24,
@@ -177,9 +176,22 @@ const styles = StyleSheet.create({
   detailDescription: {
     fontSize: 16,
     color: '#fff',
-    textAlign: 'left', // Center the text
+    textAlign: 'left', 
     marginTop: 5,
-    lineHeight: 30, // Optional: Adds spacing between lines
+    lineHeight: 30, 
+  },
+  blurView: {
+    flex: 1, 
+  },
+  backgroundImage: {
+    flex: 1,
+    resizeMode: 'cover', 
+  },
+  detailsContainer: {
+    flex: 1,
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)', 
   },
 });
 
