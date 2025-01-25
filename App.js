@@ -18,6 +18,7 @@ const members = [
   { name: 'SO JUNGHWAN', image: require('./assets/junghwan.jpg') },
 ];
 
+
 const HomeScreen = () => {
   const navigation = useNavigation();
 
@@ -27,14 +28,18 @@ const HomeScreen = () => {
       style={styles.backgroundImage}
       blurRadius={5}
     >
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <Image
-            source={require('./assets/group-photo.jpg')}
-            style={styles.groupImage}
-          />
-          <Text style={styles.title}>TREASURE MEMBERS</Text>
-        </View>
+     <View style={styles.header}>
+  <TouchableOpacity
+    onPress={() => navigation.navigate('MemberDetails', { showVinylScreen: true })}
+  >
+    <Image
+      source={require('./assets/group-photo.jpg')}
+      style={styles.groupImage}
+    />
+  </TouchableOpacity>
+  <Text style={styles.title}>TREASURE MEMBERS</Text>
+</View>
+
 
         <ScrollView contentContainerStyle={styles.membersList}>
           {members.map((member, index) => (
@@ -49,14 +54,39 @@ const HomeScreen = () => {
               <Text style={styles.memberName}>{member.name}</Text>
             </TouchableOpacity>
           ))}
+          
         </ScrollView>
-      </View>
     </ImageBackground>
   );
 };
 
 const MemberDetailsScreen = ({ route }) => {
-  const { member } = route.params;
+  const { member, showVinylScreen } = route.params || {};
+
+  if (showVinylScreen) {
+    // Render the vinyl screen
+    return (
+      <ImageBackground
+        source={require('./assets/background.jpg')}
+        style={styles.backgroundImage}
+        blurRadius={5}
+      >
+        <ScrollView contentContainerStyle={styles.vinylScreen}>
+          {members.map((member, index) => (
+            <View key={index} style={styles.vinylCard}>
+              <View style={styles.vinylIcon}>
+                {/* Placeholder for vinyl disc */}
+                <View style={styles.vinylDisc}>
+                  <View style={styles.vinylCenter} />
+                </View>
+              </View>
+              <Text style={styles.memberName}>{member.name}</Text>
+            </View>
+          ))}
+        </ScrollView>
+      </ImageBackground>
+    );
+  }
   
   let description = 'No description available'; 
 
@@ -129,6 +159,7 @@ const styles = StyleSheet.create({
     height: 200,
     borderRadius: 10,
     resizeMode: 'cover',
+    marginTop: 20,
   },
   title: {
     color: '#fff',
@@ -138,6 +169,8 @@ const styles = StyleSheet.create({
   },
   membersList: {
     paddingBottom: 20,
+    paddingTop: 3,
+    padding: 35,
   },
   memberItem: {
     flexDirection: 'row',
@@ -193,6 +226,45 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: 'rgba(0, 0, 0, 0.5)', 
   },
+  vinylScreen: {
+    flexDirection: 'row',
+    flexWrap: 'wrap', // Allow wrapping to the next row
+    justifyContent: 'space-around', // Distribute items evenly
+    padding: 20,
+    gap: 20, // Add spacing between items
+  },
+  vinylCard: {
+    width: '45%', // Adjust width to fit two cards per row
+  aspectRatio: 1, // Maintain square shape
+    backgroundColor: 'rgba(255, 255, 255, 0.5)', 
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+  vinylIcon: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#000',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  vinylDisc: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#3B4144',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  vinylCenter: {
+    width: 13,
+    height: 13,
+    borderRadius: 7.5,
+    backgroundColor: '#fff',
+  },
+  
 });
 
 export default App;
