@@ -1,8 +1,11 @@
-import {View, Text, Image, ScrollView, StyleSheet, TouchableOpacity, ImageBackground } from 'react-native';
+import { View, Text, Image, ScrollView, StyleSheet, TouchableOpacity, ImageBackground, FlatList } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import { useNavigation } from '@react-navigation/native'; 
-import React, { useState } from 'react';
+import { useNavigation } from '@react-navigation/native';
+import React, { useEffect, useState } from 'react';
+import YouTubeIframe from 'react-native-youtube-iframe'; // Import react-native-youtube-iframe
+import { ActivityIndicator } from 'react-native';
+import Icon from 'react-native-vector-icons/FontAwesome';
 
 
 const members = [
@@ -24,38 +27,38 @@ const HomeScreen = () => {
 
   return (
     <ImageBackground
-      source={require('./assets/background.jpg')} 
+      source={require('./assets/background.jpg')}
       style={styles.backgroundImage}
       blurRadius={5}
     >
-     <View style={styles.header}>
-  <TouchableOpacity
-    onPress={() => navigation.navigate('VinylScreen', { showVinylScreen: true })}
-  >
-    <Image
-      source={require('./assets/group-photo.jpg')}
-      style={styles.groupImage}
-    />
-  </TouchableOpacity>
-  <Text style={styles.title}>TREASURE MEMBERS</Text>
-</View>
+      <View style={styles.header}>
+        <TouchableOpacity
+          onPress={() => navigation.navigate('VinylScreen', { showVinylScreen: true })}
+        >
+          <Image
+            source={require('./assets/group-photo.jpg')}
+            style={styles.groupImage}
+          />
+        </TouchableOpacity>
+        <Text style={styles.title}>TREASURE MEMBERS</Text>
+      </View>
 
 
-        <ScrollView contentContainerStyle={styles.membersList}>
-          {members.map((member, index) => (
-            <TouchableOpacity
-              key={index}
-              style={styles.memberItem}
-              onPress={() =>
-                navigation.navigate('MemberDetails', { member })
-              }
-            >
-              <Image source={member.image} style={styles.memberImage} />
-              <Text style={styles.memberName}>{member.name}</Text>
-            </TouchableOpacity>
-          ))}
-          
-        </ScrollView>
+      <ScrollView contentContainerStyle={styles.membersList}>
+        {members.map((member, index) => (
+          <TouchableOpacity
+            key={index}
+            style={styles.memberItem}
+            onPress={() =>
+              navigation.navigate('MemberDetails', { member })
+            }
+          >
+            <Image source={member.image} style={styles.memberImage} />
+            <Text style={styles.memberName}>{member.name}</Text>
+          </TouchableOpacity>
+        ))}
+
+      </ScrollView>
     </ImageBackground>
   );
 };
@@ -63,7 +66,6 @@ const HomeScreen = () => {
 const VinylScreen = ({ route }) => {
   const { showVinylScreen } = route.params || {};
   const [selectedMember, setSelectedMember] = useState(null);
-  const [playlist, setPlaylist] = useState([]);
 
   if (!showVinylScreen) return null;
 
@@ -74,26 +76,8 @@ const VinylScreen = ({ route }) => {
       blurRadius={5}
     >
       {selectedMember ? (
-        // Player screen
-        <View style={styles.playerScreen}>
-          <View style={styles.playerContainer}>
-            {/* Vinyl Disc */}
-            <View style={styles.vinylDisc}>
-              <View style={styles.vinylCenter} />
-            </View>
-            {/* Member Name */}
-            <Text style={styles.memberName}>{selectedMember.name}</Text>
-
-            {/* Player Controls */}
-            <View style={styles.playerControls}>
-              <Text style={styles.controlButton}>⏮</Text>
-              <Text style={styles.controlButton}>▶</Text>
-              <Text style={styles.controlButton}>⏭</Text>
-            </View>
-          </View>
-        </View>
+        <Playlist />
       ) : (
-        // Vinyl selection screen
         <ScrollView contentContainerStyle={styles.vinylScreen}>
           {members.map((member, index) => (
             <TouchableOpacity
@@ -116,10 +100,139 @@ const VinylScreen = ({ route }) => {
 };
 
 
+
+const Playlist = () => {
+  const [songs, setSongs] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [nextPageToken, setNextPageToken] = useState(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [sound, setSound] = useState();
+  const [currentIndex, setCurrentIndex] = useState(null); // Current song index
+
+  useEffect(() => {
+    fetchSongs(); // Only called once when the component mounts
+  }, []);
+
+  const fetchSongs = () => {
+    if (loading) return;  // Prevent fetch if already loading or no more items
+
+    setLoading(true);
+    const apiKey = "AIzaSyC_HdI3_gQ8WjcORix4NCM4CZiuzMvoIR0";
+    const playlistId = "PLo9asGQPwSYSjf3uHpD3oSe0TbhAwLiih";
+    const url = nextPageToken
+      ? `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${playlistId}&key=${apiKey}&pageToken=${nextPageToken}&maxResults=10`
+      : `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${playlistId}&key=${apiKey}&maxResults=10`;
+
+      fetch(url)
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.items && Array.isArray(data.items)) {
+          const newSongs = data.items.map((item) => ({
+            title: item.snippet.title,
+            videoId: item.snippet.resourceId.videoId,  // Video ID for YouTube
+          }));
+          setSongs((prevSongs) => [...prevSongs, ...newSongs]);
+          setNextPageToken(data.nextPageToken);
+        }
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error("Error fetching data:", error);
+        setLoading(false);
+      });
+  };
+
+  // Play the selected song
+  const playSong = (index) => {
+    if (index < 0 || index >= songs.length) return; // Ensure valid index
+    setCurrentIndex(index);  // Set the current song
+    setIsPlaying(true);      // Set to play
+  };
+
+   // Play/Pause toggle
+   const togglePlayPause = () => {
+    setIsPlaying(!isPlaying);
+  };
+
+  // Play the next song
+  const playNext = () => {
+    if (currentIndex < songs.length - 1) {
+      setCurrentIndex(currentIndex + 1);
+      setIsPlaying(true);
+    }
+  };
+
+  // Play the previous song
+  const playPrevious = () => {
+    if (currentIndex > 0) {
+      setCurrentIndex(currentIndex - 1);
+      setIsPlaying(true);
+    }
+  };
+
+  // Render each song in the list
+  const renderSong = ({ item, index }) => (
+    <TouchableOpacity onPress={() => playSong(index)} style={styles.songItem}>
+      <Text style={styles.songTitle}>{item.title}</Text>
+    </TouchableOpacity>
+  );
+
+  return (
+    <View style={styles.playlistContainer}>
+      {/* Song Player Container */}
+      {isPlaying && currentIndex !== null && (
+        <View style={styles.songPlayerContainer}>
+          <View style={styles.playerControls}>
+            <Text style={styles.songTitle}>{songs[currentIndex].title}</Text>
+            <View style={styles.controlButtons}>
+              {/* Previous Button */}
+              <TouchableOpacity onPress={playPrevious} style={styles.controlButton}>
+                <Icon name="backward" size={30} color="#fff" />
+              </TouchableOpacity>
+
+              {/* Play/Pause Button */}
+              <TouchableOpacity onPress={togglePlayPause} style={styles.controlButton}>
+                <Icon name={isPlaying ? "pause" : "play"} size={30} color="#fff" />
+              </TouchableOpacity>
+
+              {/* Next Button */}
+              <TouchableOpacity onPress={playNext} style={styles.controlButton}>
+                <Icon name="forward" size={30} color="#fff" />
+              </TouchableOpacity>
+            </View>
+          </View>
+          <YouTubeIframe
+            videoId={songs[currentIndex].videoId}  // Play the selected song from YouTube
+            height={300}
+            play={isPlaying}
+            onChangeState={(state) => {
+              if (state === "ended") {
+                setIsPlaying(false);  // Automatically stop playing when video ends
+                playNext();  // Automatically play next song when the current one ends
+              }
+            }}
+          />
+        </View>
+      )}
+
+      {/* Song List */}
+      {loading && <ActivityIndicator size="large" color="#fff" />}
+      <FlatList
+        data={songs}
+        renderItem={renderSong}
+        keyExtractor={(item, index) => index.toString()}
+        onEndReached={fetchSongs}
+        onEndReachedThreshold={0.5}
+        style={styles.songList}
+      />
+    </View>
+  );
+};
+
 const MemberDetailsScreen = ({ route }) => {
   const { member } = route.params || {};
-  
-  let description = 'No description available'; 
+
+  let description = 'No description available';
 
   if (member.name === 'CHOI HYUNSUK') {
     description = `Stage / Birth Name: Choi Hyun-suk (최현석)\nEnglish Name: Danny Choi\nPosition(s): Main Dancer, Main Rapper, Vocalist \nBirthday: April 21st, 1999 \nZodiac Sign: Taurus \nChinese Zodiac Sign: Rabbit \nHeight: 171 cm (5’7”) \nWeight: 58 kg (128 lbs) \nBlood Type: A \nMBTI Type: ENFP \nNationality: Korean`;
@@ -142,12 +255,12 @@ const MemberDetailsScreen = ({ route }) => {
   } else if (member.name === 'SO JUNGHWAN') {
     description = 'Stage / Birth Name: So Jung-hwan (소정환) \nEnglish Name: John So \nPosition(s): Lead Dancer, Vocalist, Maknae \nBirthday: February 18th, 2005 \nZodiac Sign: Aquarius \nChinese Zodiac Sign: Rooster \nHeight: 180.3 cm (5’11″) \nWeight: 67 kg (147 lbs) \nBlood Type: B \nMBTI Type: ENFP-T \nNationality: Korean';
   }
-  
+
   return (
     <ImageBackground
-      source={require('./assets/background.jpg')} 
+      source={require('./assets/background.jpg')}
       style={styles.backgroundImage}
-      blurRadius={5} 
+      blurRadius={5}
     >
       <ScrollView contentContainerStyle={styles.detailsContainer}>
         <Image source={member.image} style={styles.detailImage} />
@@ -165,8 +278,8 @@ const App = () => {
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{
-          headerTintColor: '#000', 
-        }}>
+        headerTintColor: '#000',
+      }}>
         <Stack.Screen name="Home" component={HomeScreen} options={{ title: 'TREASURE' }} />
         <Stack.Screen name="MemberDetails" component={MemberDetailsScreen} options={{ title: 'Member Details' }} />
         <Stack.Screen name="VinylScreen" component={VinylScreen} options={{ title: 'Member Playlist' }} />
@@ -178,7 +291,7 @@ const App = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'transparent', 
+    backgroundColor: 'transparent',
     alignItems: 'center',
     paddingTop: 20,
   },
@@ -207,7 +320,7 @@ const styles = StyleSheet.create({
   memberItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.5)', 
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
     padding: 10,
     marginVertical: 5,
     borderRadius: 10,
@@ -226,11 +339,11 @@ const styles = StyleSheet.create({
     color: '#000',
   },
   detailImage: {
-    width: 150,  
-    height: 150, 
-    borderRadius: 75, 
+    width: 150,
+    height: 150,
+    borderRadius: 75,
     marginBottom: 20,
-    resizeMode: 'cover', 
+    resizeMode: 'cover',
   },
   detailName: {
     fontSize: 24,
@@ -241,22 +354,22 @@ const styles = StyleSheet.create({
   detailDescription: {
     fontSize: 16,
     color: '#fff',
-    textAlign: 'left', 
+    textAlign: 'left',
     marginTop: 5,
-    lineHeight: 30, 
+    lineHeight: 30,
   },
   blurView: {
-    flex: 1, 
+    flex: 1,
   },
   backgroundImage: {
     flex: 1,
-    resizeMode: 'cover', 
+    resizeMode: 'cover',
   },
   detailsContainer: {
     flex: 1,
     alignItems: 'center',
     padding: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)', 
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   vinylScreen: {
     flexDirection: 'row',
@@ -267,8 +380,8 @@ const styles = StyleSheet.create({
   },
   vinylCard: {
     width: '45%', // Adjust width to fit two cards per row
-  aspectRatio: 1, // Maintain square shape
-    backgroundColor: 'rgba(255, 255, 255, 0.5)', 
+    aspectRatio: 1, // Maintain square shape
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
@@ -296,31 +409,54 @@ const styles = StyleSheet.create({
     borderRadius: 7.5,
     backgroundColor: '#fff',
   },
-  playerScreen: {
+  playlistContainer: {
     flex: 1,
-    justifyContent: 'center',
+    padding: 20,
+    justifyContent: 'flex-start',  // Align the content to the top
+    alignItems: 'center',
+    backgroundColor: '#121212',  // Dark background for the whole screen
+  },
+  songItem: {
+    marginBottom: 10,
+    backgroundColor: '#333',
+    padding: 10,
+    borderRadius: 5,
+    width: '100%',
+  },
+  songTitle: {
+    color: '#fff',
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  songPlayerContainer: {
+    width: '70%',
+    height: '20%',
+    backgroundColor: '#1e1e1e',  // Dark container for the player
+    borderRadius: 10,
+    padding: 15,
     alignItems: 'center',
   },
   playerControls: {
-    flexDirection: 'row',
+    marginBottom: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  songList: {
+    width: '100%',
     marginTop: 20,
   },
+  controlButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginTop: 10,
+  },
   controlButton: {
-    fontSize: 24,
-    color: '#FFFFFF',
-    marginHorizontal: 20,
-    color: '#000',
+    backgroundColor: '#444',
+    padding: 10,
+    borderRadius: 5,
   },
-  playerContainer: {
-    width: '80%', // Adjust width to fit two cards per row
-    height: '50%',
-    aspectRatio: 1, // Maintain square shape
-      backgroundColor: 'rgba(255, 255, 255, 0.5)', 
-      borderRadius: 10,
-      alignItems: 'center',
-      justifyContent: 'center',
-  },
-  
+
 });
 
 export default App;
