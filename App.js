@@ -1,8 +1,8 @@
-import { View, Text, Image, ScrollView, StyleSheet, TouchableOpacity, ImageBackground } from 'react-native';
-import React from 'react';
+import {View, Text, Image, ScrollView, StyleSheet, TouchableOpacity, ImageBackground } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { useNavigation } from '@react-navigation/native'; 
+import React, { useState } from 'react';
 
 
 const members = [
@@ -30,7 +30,7 @@ const HomeScreen = () => {
     >
      <View style={styles.header}>
   <TouchableOpacity
-    onPress={() => navigation.navigate('MemberDetails', { showVinylScreen: true })}
+    onPress={() => navigation.navigate('VinylScreen', { showVinylScreen: true })}
   >
     <Image
       source={require('./assets/group-photo.jpg')}
@@ -60,33 +60,64 @@ const HomeScreen = () => {
   );
 };
 
-const MemberDetailsScreen = ({ route }) => {
-  const { member, showVinylScreen } = route.params || {};
+const VinylScreen = ({ route }) => {
+  const { showVinylScreen } = route.params || {};
+  const [selectedMember, setSelectedMember] = useState(null);
+  const [playlist, setPlaylist] = useState([]);
 
-  if (showVinylScreen) {
-    // Render the vinyl screen
-    return (
-      <ImageBackground
-        source={require('./assets/background.jpg')}
-        style={styles.backgroundImage}
-        blurRadius={5}
-      >
+  if (!showVinylScreen) return null;
+
+  return (
+    <ImageBackground
+      source={require('./assets/background.jpg')}
+      style={styles.backgroundImage}
+      blurRadius={5}
+    >
+      {selectedMember ? (
+        // Player screen
+        <View style={styles.playerScreen}>
+          <View style={styles.playerContainer}>
+            {/* Vinyl Disc */}
+            <View style={styles.vinylDisc}>
+              <View style={styles.vinylCenter} />
+            </View>
+            {/* Member Name */}
+            <Text style={styles.memberName}>{selectedMember.name}</Text>
+
+            {/* Player Controls */}
+            <View style={styles.playerControls}>
+              <Text style={styles.controlButton}>⏮</Text>
+              <Text style={styles.controlButton}>▶</Text>
+              <Text style={styles.controlButton}>⏭</Text>
+            </View>
+          </View>
+        </View>
+      ) : (
+        // Vinyl selection screen
         <ScrollView contentContainerStyle={styles.vinylScreen}>
           {members.map((member, index) => (
-            <View key={index} style={styles.vinylCard}>
+            <TouchableOpacity
+              key={index}
+              style={styles.vinylCard}
+              onPress={() => setSelectedMember(member)}
+            >
               <View style={styles.vinylIcon}>
-                {/* Placeholder for vinyl disc */}
                 <View style={styles.vinylDisc}>
                   <View style={styles.vinylCenter} />
                 </View>
               </View>
               <Text style={styles.memberName}>{member.name}</Text>
-            </View>
+            </TouchableOpacity>
           ))}
         </ScrollView>
-      </ImageBackground>
-    );
-  }
+      )}
+    </ImageBackground>
+  );
+};
+
+
+const MemberDetailsScreen = ({ route }) => {
+  const { member } = route.params || {};
   
   let description = 'No description available'; 
 
@@ -138,6 +169,7 @@ const App = () => {
         }}>
         <Stack.Screen name="Home" component={HomeScreen} options={{ title: 'TREASURE' }} />
         <Stack.Screen name="MemberDetails" component={MemberDetailsScreen} options={{ title: 'Member Details' }} />
+        <Stack.Screen name="VinylScreen" component={VinylScreen} options={{ title: 'Member Playlist' }} />
       </Stack.Navigator>
     </NavigationContainer>
   );
@@ -263,6 +295,30 @@ const styles = StyleSheet.create({
     height: 13,
     borderRadius: 7.5,
     backgroundColor: '#fff',
+  },
+  playerScreen: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  playerControls: {
+    flexDirection: 'row',
+    marginTop: 20,
+  },
+  controlButton: {
+    fontSize: 24,
+    color: '#FFFFFF',
+    marginHorizontal: 20,
+    color: '#000',
+  },
+  playerContainer: {
+    width: '80%', // Adjust width to fit two cards per row
+    height: '50%',
+    aspectRatio: 1, // Maintain square shape
+      backgroundColor: 'rgba(255, 255, 255, 0.5)', 
+      borderRadius: 10,
+      alignItems: 'center',
+      justifyContent: 'center',
   },
   
 });
