@@ -3,9 +3,6 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { useNavigation } from '@react-navigation/native';
 import React, { useEffect, useState, useRef } from 'react';
-import YouTubeIframe from 'react-native-youtube-iframe'; // Import react-native-youtube-iframe
-import { ActivityIndicator } from 'react-native';
-import Icon from 'react-native-vector-icons/FontAwesome';
 import PlayerScreen from './playerScreen';
 import Playlist from './playlist';
 
