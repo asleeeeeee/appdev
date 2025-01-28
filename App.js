@@ -1,11 +1,13 @@
-import { View, Text, Image, ScrollView, StyleSheet, TouchableOpacity, ImageBackground, FlatList } from 'react-native';
+import { View, Text, Image, ScrollView, StyleSheet, TouchableOpacity, ImageBackground, FlatList, Animated } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { useNavigation } from '@react-navigation/native';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import YouTubeIframe from 'react-native-youtube-iframe'; // Import react-native-youtube-iframe
 import { ActivityIndicator } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import PlayerScreen from './playerScreen';
+import Playlist from './playlist';
 
 
 const members = [
@@ -63,11 +65,8 @@ const HomeScreen = () => {
   );
 };
 
-const VinylScreen = ({ route }) => {
-  const { showVinylScreen } = route.params || {};
+const VinylScreen = ({ route, navigation }) => {
   const [selectedMember, setSelectedMember] = useState(null);
-
-  if (!showVinylScreen) return null;
 
   return (
     <ImageBackground
@@ -75,159 +74,62 @@ const VinylScreen = ({ route }) => {
       style={styles.backgroundImage}
       blurRadius={5}
     >
-      {selectedMember ? (
-        <Playlist />
-      ) : (
-        <ScrollView contentContainerStyle={styles.vinylScreen}>
-          {members.map((member, index) => (
-            <TouchableOpacity
-              key={index}
-              style={styles.vinylCard}
-              onPress={() => setSelectedMember(member)}
-            >
-              <View style={styles.vinylIcon}>
-                <View style={styles.vinylDisc}>
-                  <View style={styles.vinylCenter} />
-                </View>
-              </View>
-              <Text style={styles.memberName}>{member.name}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      )}
+      <ScrollView contentContainerStyle={styles.vinylScreen}>
+        {members.map((member, index) => (
+          <TouchableOpacity
+            key={index}
+            style={styles.vinylCard}
+            onPress={() => navigation.navigate('Playlist', { member })}
+          >
+            <VinylDisc memberImage={member.image} />
+            <View style={{ marginTop: 15 }}></View>
+            <Text style={styles.memberName}>{member.name}</Text>
+            
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
     </ImageBackground>
   );
 };
 
-
-
-const Playlist = () => {
-  const [songs, setSongs] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [nextPageToken, setNextPageToken] = useState(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [sound, setSound] = useState();
-  const [currentIndex, setCurrentIndex] = useState(null); // Current song index
+const VinylDisc = ({ memberImage }) => {
+  const rotateValue = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    fetchSongs(); // Only called once when the component mounts
-  }, []);
-
-  const fetchSongs = () => {
-    if (loading) return;  // Prevent fetch if already loading or no more items
-
-    setLoading(true);
-    const apiKey = "AIzaSyC_HdI3_gQ8WjcORix4NCM4CZiuzMvoIR0";
-    const playlistId = "PLo9asGQPwSYSjf3uHpD3oSe0TbhAwLiih";
-    const url = nextPageToken
-      ? `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${playlistId}&key=${apiKey}&pageToken=${nextPageToken}&maxResults=10`
-      : `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${playlistId}&key=${apiKey}&maxResults=10`;
-
-      fetch(url)
-      .then((response) => response.json())
-      .then((data) => {
-        if (data.items && Array.isArray(data.items)) {
-          const newSongs = data.items.map((item) => ({
-            title: item.snippet.title,
-            videoId: item.snippet.resourceId.videoId,  // Video ID for YouTube
-          }));
-          setSongs((prevSongs) => [...prevSongs, ...newSongs]);
-          setNextPageToken(data.nextPageToken);
-        }
-        setLoading(false);
+    // Start rotation animation
+    const rotateAnimation = Animated.loop(
+      Animated.timing(rotateValue, {
+        toValue: 1,
+        duration: 3000, // 3 seconds for one full rotation
+        useNativeDriver: true,
       })
-      .catch((error) => {
-        console.error("Error fetching data:", error);
-        setLoading(false);
-      });
-  };
+    );
 
-  // Play the selected song
-  const playSong = (index) => {
-    if (index < 0 || index >= songs.length) return; // Ensure valid index
-    setCurrentIndex(index);  // Set the current song
-    setIsPlaying(true);      // Set to play
-  };
+    rotateAnimation.start();
 
-   // Play/Pause toggle
-   const togglePlayPause = () => {
-    setIsPlaying(!isPlaying);
-  };
+    // Cleanup on unmount
+    return () => rotateAnimation.stop();
+  }, [rotateValue]);
 
-  // Play the next song
-  const playNext = () => {
-    if (currentIndex < songs.length - 1) {
-      setCurrentIndex(currentIndex + 1);
-      setIsPlaying(true);
-    }
-  };
-
-  // Play the previous song
-  const playPrevious = () => {
-    if (currentIndex > 0) {
-      setCurrentIndex(currentIndex - 1);
-      setIsPlaying(true);
-    }
-  };
-
-  // Render each song in the list
-  const renderSong = ({ item, index }) => (
-    <TouchableOpacity onPress={() => playSong(index)} style={styles.songItem}>
-      <Text style={styles.songTitle}>{item.title}</Text>
-    </TouchableOpacity>
-  );
+  // Interpolation for rotation
+  const rotation = rotateValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'], // Full rotation
+  });
 
   return (
-    <View style={styles.playlistContainer}>
-      {/* Song Player Container */}
-      {isPlaying && currentIndex !== null && (
-        <View style={styles.songPlayerContainer}>
-          <View style={styles.playerControls}>
-            <Text style={styles.songTitle}>{songs[currentIndex].title}</Text>
-            <View style={styles.controlButtons}>
-              {/* Previous Button */}
-              <TouchableOpacity onPress={playPrevious} style={styles.controlButton}>
-                <Icon name="backward" size={30} color="#fff" />
-              </TouchableOpacity>
-
-              {/* Play/Pause Button */}
-              <TouchableOpacity onPress={togglePlayPause} style={styles.controlButton}>
-                <Icon name={isPlaying ? "pause" : "play"} size={30} color="#fff" />
-              </TouchableOpacity>
-
-              {/* Next Button */}
-              <TouchableOpacity onPress={playNext} style={styles.controlButton}>
-                <Icon name="forward" size={30} color="#fff" />
-              </TouchableOpacity>
-            </View>
-          </View>
-          <YouTubeIframe
-            videoId={songs[currentIndex].videoId}  // Play the selected song from YouTube
-            height={300}
-            play={isPlaying}
-            onChangeState={(state) => {
-              if (state === "ended") {
-                setIsPlaying(false);  // Automatically stop playing when video ends
-                playNext();  // Automatically play next song when the current one ends
-              }
-            }}
-          />
-        </View>
-      )}
-
-      {/* Song List */}
-      {loading && <ActivityIndicator size="large" color="#fff" />}
-      <FlatList
-        data={songs}
-        renderItem={renderSong}
-        keyExtractor={(item, index) => index.toString()}
-        onEndReached={fetchSongs}
-        onEndReachedThreshold={0.5}
-        style={styles.songList}
+    <View style={styles.outerBorder}>
+      <Animated.Image
+        source={memberImage}
+        style={[styles.vinyl, { transform: [{ rotate: rotation }] }]}
+        resizeMode="cover"
       />
+      {/* Add the vinyl center */}
+      <View style={styles.vinylCenter} />
     </View>
   );
 };
+
 
 const MemberDetailsScreen = ({ route }) => {
   const { member } = route.params || {};
@@ -283,6 +185,8 @@ const App = () => {
         <Stack.Screen name="Home" component={HomeScreen} options={{ title: 'TREASURE' }} />
         <Stack.Screen name="MemberDetails" component={MemberDetailsScreen} options={{ title: 'Member Details' }} />
         <Stack.Screen name="VinylScreen" component={VinylScreen} options={{ title: 'Member Playlist' }} />
+        <Stack.Screen name="Playlist" component={Playlist} options={{ title: 'Playlist' }} />
+        <Stack.Screen name="Player" component={PlayerScreen} options={{ title: 'Player' }} />
       </Stack.Navigator>
     </NavigationContainer>
   );
@@ -386,6 +290,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 20,
+    height: '50%',
   },
   vinylIcon: {
     width: 60,
@@ -402,61 +307,41 @@ const styles = StyleSheet.create({
     backgroundColor: '#3B4144',
     justifyContent: 'center',
     alignItems: 'center',
+    
   },
   vinylCenter: {
-    width: 13,
-    height: 13,
-    borderRadius: 7.5,
+    width: 20,
+    height: 20,
+    borderRadius: 25,
     backgroundColor: '#fff',
+    position: 'absolute',
+    borderWidth: 2, // Set the width of the border
+    borderColor: '#000', // Set the color of the border (e.g., orange)
   },
-  playlistContainer: {
-    flex: 1,
-    padding: 20,
-    justifyContent: 'flex-start',  // Align the content to the top
+ 
+  vinylImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    position: 'absolute',
+  },
+  outerBorder: {
+    width: 90, // Adjust size as needed
+    height: 90,
+    borderRadius: 45, // Makes it circular
+    borderWidth: 5, // Outer border thickness
+    borderColor: 'black', // Outer border color
+    justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#121212',  // Dark background for the whole screen
+    overflow: 'hidden', // Ensures the vinyl stays circular
   },
-  songItem: {
-    marginBottom: 10,
-    backgroundColor: '#333',
-    padding: 10,
-    borderRadius: 5,
-    width: '100%',
-  },
-  songTitle: {
-    color: '#fff',
-    fontSize: 16,
-    textAlign: 'center',
-  },
-  songPlayerContainer: {
-    width: '70%',
-    height: '20%',
-    backgroundColor: '#1e1e1e',  // Dark container for the player
-    borderRadius: 10,
-    padding: 15,
-    alignItems: 'center',
-  },
-  playerControls: {
-    marginBottom: 10,
+  vinyl: {
+    width: 140, // Inner vinyl size (slightly smaller than the border)
+    height: 140,
+    borderRadius: 70, // Makes it circular
     justifyContent: 'center',
     alignItems: 'center',
   },
-  songList: {
-    width: '100%',
-    marginTop: 20,
-  },
-  controlButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
-    marginTop: 10,
-  },
-  controlButton: {
-    backgroundColor: '#444',
-    padding: 10,
-    borderRadius: 5,
-  },
-
 });
 
 export default App;
