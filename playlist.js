@@ -11,31 +11,54 @@ import {
 } from 'react-native';
 
 const Playlist = ({ route, navigation }) => {
-  const { member } = route.params; // Get the selected member from route params
-  const [songs, setSongs] = useState([]); // Holds the song list
-  const [loading, setLoading] = useState(false); // Loading state to handle API requests
-  const [nextPageToken, setNextPageToken] = useState(null); // For paginated API results
-  const fadeAnim = new Animated.Value(0); // For fade-in effect on the screen
+  const { member } = route.params || {}; // Get the selected member from route params
+  const [songs, setSongs] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [nextPageToken, setNextPageToken] = useState(null);
+  const fadeAnim = new Animated.Value(0);
 
   useEffect(() => {
-    fetchSongs();
+    if (member && member.name) {
+      fetchSongs(member.name.toLowerCase());
+    }
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 1000,
       useNativeDriver: true,
     }).start();
-  }, []);
+  }, [member]);
 
-  // Function to fetch songs from the YouTube API
-  const fetchSongs = () => {
-    if (loading) return;
+  const fetchSongs = (memberName) => {
+    if (loading || !memberName) return;
 
     setLoading(true);
+
     const apiKey = 'AIzaSyC_HdI3_gQ8WjcORix4NCM4CZiuzMvoIR0';
-    const playlistId = 'PLo9asGQPwSYSjf3uHpD3oSe0TbhAwLiih'; // Update with your playlist ID
-    const url = nextPageToken
-      ? `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${playlistId}&key=${apiKey}&pageToken=${nextPageToken}&maxResults=10`
-      : `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${playlistId}&key=${apiKey}&maxResults=10`;
+    const playlistIds = {
+      'choi hyunsuk': 'PLo9asGQPwSYSjf3uHpD3oSe0TbhAwLiih',
+      'park jihoon': 'PLo9asGQPwSYSNugB7CFVOErkp_Ldnna1q',
+      'kim junkyu': 'PLo9asGQPwSYTrw4UauSPduwicibIzqR8e',
+      'yoshinori': 'PLo9asGQPwSYSlBke4GmZMqR6mSJbv9BkN',
+      'asahi': 'PLo9asGQPwSYQYqg0C1xy-p8rV9VAAnZ0W',
+      'yoon jaehyuk': 'PLo9asGQPwSYStpVEqbS5TVyLmd9cUeoQt',
+      'park jeongwoo': 'PLo9asGQPwSYRk1ms3hLOKR_ElVspIHRhv',
+      'haruto': 'PLo9asGQPwSYRhWCrI1ap3VNjAAHJpDQp9',
+      'kim doyoung': 'PLo9asGQPwSYQAUacIz_0gHe1k0ecKUl0A',
+      'so junghwan': 'PLo9asGQPwSYRwEbibmf9DJvC41BVhK4jj',
+    };
+
+    const playlistId = playlistIds[member.name.toLowerCase()];
+
+    if (!playlistId) {
+      console.error('Invalid member name:', memberName);
+      setLoading(false);
+      return;
+    }
+
+    const baseUrl = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${playlistId}&key=${apiKey}`;
+    const url = nextPageToken ? `${baseUrl}&pageToken=${nextPageToken}&maxResults=10` : `${baseUrl}&maxResults=10`;
+
+    console.log('Fetching from URL:', url);
 
     fetch(url)
       .then((response) => response.json())
@@ -45,8 +68,10 @@ const Playlist = ({ route, navigation }) => {
             title: item.snippet.title,
             videoId: item.snippet.resourceId.videoId,
           }));
-          setSongs((prev) => [...prev, ...newSongs]); // Add new songs to existing songs
-          setNextPageToken(data.nextPageToken); // Set the next page token for pagination
+          setSongs((prev) => [...prev, ...newSongs]);
+          setNextPageToken(data.nextPageToken || null);
+        } else {
+          console.log('No songs found for this member.');
         }
         setLoading(false);
       })
@@ -58,12 +83,15 @@ const Playlist = ({ route, navigation }) => {
 
   return (
     <ImageBackground
-      source={require('./assets/background.jpg')} // Ensure the correct image path
+      source={require('./assets/background.jpg')}
       style={styles.backgroundImage}
       blurRadius={5}
     >
       <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
         <View style={styles.playlistContainer}>
+          <Text style={styles.playlistIdText}>
+            Playlist for: {member.name || 'Unknown'}
+          </Text>
           <ScrollView contentContainerStyle={styles.playlist}>
             {songs.length > 0 ? (
               songs.map((song, index) => (
@@ -71,14 +99,18 @@ const Playlist = ({ route, navigation }) => {
                   key={index}
                   style={styles.songItem}
                   onPress={() =>
-                    navigation.navigate('Player', { song, memberImage: member.image })
+                    navigation.navigate('Player', {
+                      song,
+                      memberImage: member.image,
+                      songs,
+                    })
                   }
                 >
                   <Text style={styles.songTitle}>{song.title}</Text>
                 </TouchableOpacity>
               ))
             ) : (
-              <Text style={styles.noSongsText}>No songs available.</Text>
+              !loading && <Text style={styles.noSongsText}>No songs available.</Text>
             )}
 
             {loading && <ActivityIndicator size="large" color="#fff" />}
@@ -100,11 +132,12 @@ const styles = StyleSheet.create({
     marginTop: 20,
     marginHorizontal: 15,
     borderRadius: 15,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)', // Semi-transparent background
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
     padding: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
+
   playlist: {
     flexGrow: 1,
     paddingBottom: 50,
@@ -112,7 +145,7 @@ const styles = StyleSheet.create({
   songItem: {
     padding: 15,
     marginVertical: 10,
-    backgroundColor: 'rgba(255, 255, 255, 0.8)', // White with transparency
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
     borderRadius: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 3 },
@@ -124,11 +157,10 @@ const styles = StyleSheet.create({
   },
   songTitle: {
     fontSize: 16,
-    fontWeight: 'bold',
     color: '#fff',
     textAlign: 'center',
   },
-  
+
 });
 
 export default Playlist;
