@@ -61,25 +61,34 @@ const Playlist = ({ route, navigation }) => {
     console.log('Fetching from URL:', url);
 
     fetch(url)
-      .then((response) => response.json())
-      .then((data) => {
-        if (data.items) {
-          const newSongs = data.items.map((item) => ({
-            title: item.snippet.title,
-            videoId: item.snippet.resourceId.videoId,
-          }));
-          setSongs((prev) => [...prev, ...newSongs]);
-          setNextPageToken(data.nextPageToken || null);
-        } else {
-          console.log('No songs found for this member.');
-        }
-        setLoading(false);
-      })
-      .catch((error) => {
-        console.error('Error fetching songs:', error);
-        setLoading(false);
+  .then((response) => response.json())
+  .then((data) => {
+    if (data.items) {
+      const newSongs = data.items.map((item) => ({
+        title: item.snippet.title,
+        videoId: item.snippet.resourceId.videoId,
+      }));
+
+      setSongs((prev) => {
+        // Remove duplicates before updating state
+        const uniqueSongs = [...prev, ...newSongs].filter(
+          (song, index, self) =>
+            index === self.findIndex((s) => s.videoId === song.videoId) // Check if videoId is already present
+        );
+        return uniqueSongs;
       });
-  };
+
+      setNextPageToken(data.nextPageToken || null);
+    } else {
+      console.log('No songs found for this member.');
+    }
+    setLoading(false);
+  })
+  .catch((error) => {
+    console.error('Error fetching songs:', error);
+    setLoading(false);
+  });
+  }
 
   return (
     <ImageBackground
@@ -87,12 +96,13 @@ const Playlist = ({ route, navigation }) => {
       style={styles.backgroundImage}
       blurRadius={5}
     >
-      <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
+      <Animated.View style={{ flex: 1 }}>
         <View style={styles.playlistContainer}>
           <Text style={styles.playlistIdText}>
             Playlist for: {member.name || 'Unknown'}
           </Text>
-          <ScrollView contentContainerStyle={styles.playlist}>
+          <View style={{ flex: 1, width: '100%' }}></View>
+          <ScrollView key={songs.length} contentContainerStyle={styles.playlist}>
             {songs.length > 0 ? (
               songs.map((song, index) => (
                 <TouchableOpacity
@@ -132,34 +142,37 @@ const styles = StyleSheet.create({
     marginTop: 20,
     marginHorizontal: 15,
     borderRadius: 15,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
     padding: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
 
   playlist: {
-    flexGrow: 1,
-    paddingBottom: 50,
+        flexGrow: 1,
+        paddingBottom: 50,
+        minHeight: 300, // Add a minimum height to ensure visibility
   },
   songItem: {
     padding: 15,
     marginVertical: 10,
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
     borderRadius: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
     elevation: 5,
     alignItems: 'center',
     width: '100%',
   },
+  
   songTitle: {
     fontSize: 16,
     color: '#fff',
     textAlign: 'center',
+    fontWeight: 'bold',
+    padding: 5,
+    borderRadius: 5,
   },
+  playlistIdText: {
+    color: '#fff',
+  }
+  
 
 });
 

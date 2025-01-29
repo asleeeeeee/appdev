@@ -1,19 +1,32 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image, Animated } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image, Animated, setCurrentSong } from 'react-native';
 import YouTubeIframe from 'react-native-youtube-iframe';
 import Slider from '@react-native-community/slider';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import { usePlayer } from './playerContext';
 
-const PlayerScreen = ({ route, navigation }) => {
+const PlayerScreen = ({ route}) => {
   const { song, memberImage, songs } = route.params;
   const [isPlaying, setIsPlaying] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(songs.findIndex(s => s.videoId === song.videoId));
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const playerRef = useRef(null);
+  const { setCurrentSong, setIsPlaying: setPlayerIsPlaying } = usePlayer(); // Destructure from context
 
   const rotation = useRef(new Animated.Value(0)).current;
   const intervalRef = useRef(null);
+
+  useEffect(() => {
+    if (song) {
+      setIsPlaying(true);  // Automatically start playing the song when this screen loads
+    }
+  }, [song, setIsPlaying]);
+  
+  useEffect(() => {
+    setCurrentSong(song);
+    setIsPlaying(true);
+  }, [song, setCurrentSong, setIsPlaying]);
 
   useEffect(() => {
     if (isPlaying) {
@@ -52,6 +65,7 @@ const PlayerScreen = ({ route, navigation }) => {
 
   const togglePlayPause = () => {
     setIsPlaying(!isPlaying);
+    setPlayerIsPlaying(!isPlaying); // Update playing state in context
   };
 
   const playNext = () => {

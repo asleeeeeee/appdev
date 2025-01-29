@@ -5,6 +5,8 @@ import { useNavigation } from '@react-navigation/native';
 import React, { useEffect, useState, useRef } from 'react';
 import PlayerScreen from './playerScreen';
 import Playlist from './playlist';
+import { PlayerProvider } from './playerContext';
+import MiniPlayer from './miniPlayer';
 
 
 const members = [
@@ -90,42 +92,18 @@ const VinylScreen = ({ route, navigation }) => {
 };
 
 const VinylDisc = ({ memberImage }) => {
-  const rotateValue = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    // Start rotation animation
-    const rotateAnimation = Animated.loop(
-      Animated.timing(rotateValue, {
-        toValue: 1,
-        duration: 3000, // 3 seconds for one full rotation
-        useNativeDriver: true,
-      })
-    );
-
-    rotateAnimation.start();
-
-    // Cleanup on unmount
-    return () => rotateAnimation.stop();
-  }, [rotateValue]);
-
-  // Interpolation for rotation
-  const rotation = rotateValue.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'], // Full rotation
-  });
-
   return (
     <View style={styles.outerBorder}>
-      <Animated.Image
+      <Image
         source={memberImage}
-        style={[styles.vinyl, { transform: [{ rotate: rotation }] }]}
+        style={styles.vinyl} // No need for the transform
         resizeMode="cover"
       />
-      {/* Add the vinyl center */}
-      <View style={styles.vinylCenter} />
+     
     </View>
   );
 };
+
 
 
 const MemberDetailsScreen = ({ route }) => {
@@ -175,6 +153,7 @@ const Stack = createStackNavigator();
 
 const App = () => {
   return (
+    <PlayerProvider>
     <NavigationContainer>
       <Stack.Navigator screenOptions={{
         headerTintColor: '#000',
@@ -184,8 +163,13 @@ const App = () => {
         <Stack.Screen name="VinylScreen" component={VinylScreen} options={{ title: 'Member Playlist' }} />
         <Stack.Screen name="Playlist" component={Playlist} options={{ title: 'Playlist' }} />
         <Stack.Screen name="Player" component={PlayerScreen} options={{ title: 'Player' }} />
+      
+          <Stack.Screen name="PlayerScreen" component={PlayerScreen} />
+       
       </Stack.Navigator>
+      <MiniPlayer />
     </NavigationContainer>
+    </PlayerProvider>
   );
 };
 
