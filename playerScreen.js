@@ -11,6 +11,7 @@ const PlayerScreen = ({ route}) => {
   const [currentIndex, setCurrentIndex] = useState(songs.findIndex(s => s.videoId === song.videoId));
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [lastRotation, setLastRotation] = useState(0); 
   const playerRef = useRef(null);
   const { setCurrentSong, setIsPlaying: setPlayerIsPlaying } = usePlayer(); // Destructure from context
 
@@ -30,19 +31,19 @@ const PlayerScreen = ({ route}) => {
 
   useEffect(() => {
     if (isPlaying) {
-      // Start the rotation animation when the song is playing
+      // Start or resume the rotation animation when the song is playing
       Animated.loop(
         Animated.timing(rotation, {
-          toValue: 1,
-          duration: 5000,
+          toValue: rotation._value + 1, // Keep adding 1 to the current value
+          duration: 3000, // Faster rotation (e.g., 3000ms for 360 degree rotation)
           useNativeDriver: true,
         })
       ).start();
     } else {
-      // Stop rotation when the song is paused
+      // Ensure rotation continues without resetting when paused
       rotation.stopAnimation();
     }
-
+  
     // Start the interval to update current time
     if (isPlaying) {
       intervalRef.current = setInterval(() => {
@@ -53,15 +54,20 @@ const PlayerScreen = ({ route}) => {
     } else {
       clearInterval(intervalRef.current); // Clear the interval when not playing
     }
-
+  
     // Cleanup on unmount
-    return () => clearInterval(intervalRef.current);
+    return () => {
+      clearInterval(intervalRef.current);
+      rotation.stopAnimation();
+    };
   }, [isPlaying]);
-
+  
+  // Interpolation for rotation
   const rotateInterpolate = rotation.interpolate({
     inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
+    outputRange: ['0deg', '360deg'], // Full rotation
   });
+  
 
   const togglePlayPause = () => {
     setIsPlaying(!isPlaying);
