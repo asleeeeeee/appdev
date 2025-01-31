@@ -8,6 +8,8 @@ import {
   View,
   ActivityIndicator,
   Animated,
+  Image,
+  FlatList,
 } from 'react-native';
 
 const Playlist = ({ route, navigation }) => {
@@ -61,75 +63,86 @@ const Playlist = ({ route, navigation }) => {
     console.log('Fetching from URL:', url);
 
     fetch(url)
-  .then((response) => response.json())
-  .then((data) => {
-    if (data.items) {
-      const newSongs = data.items.map((item) => ({
-        title: item.snippet.title,
-        videoId: item.snippet.resourceId.videoId,
-        artist: item.snippet.videoOwnerChannelTitle || 'Unknown Artist', 
-      }));
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.items) {
+          const newSongs = data.items.map((item) => ({
+            title: item.snippet.title,
+            videoId: item.snippet.resourceId.videoId,
+            artist: item.snippet.videoOwnerChannelTitle || 'Unknown Artist',
+            duration: null,
+          }));
 
-      setSongs((prev) => {
-        // Remove duplicates before updating state
-        const uniqueSongs = [...prev, ...newSongs].filter(
-          (song, index, self) =>
-            index === self.findIndex((s) => s.videoId === song.videoId) // Check if videoId is already present
-        );
-        return uniqueSongs;
+          setSongs((prev) => {
+            // Remove duplicates before updating state
+            const uniqueSongs = [...prev, ...newSongs].filter(
+              (song, index, self) =>
+                index === self.findIndex((s) => s.videoId === song.videoId) // Check if videoId is already present
+            );
+            return uniqueSongs;
+          });
+
+          setNextPageToken(data.nextPageToken || null);
+        } else {
+          console.log('No songs found for this member.');
+        }
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error('Error fetching songs:', error);
+        setLoading(false);
       });
-
-      setNextPageToken(data.nextPageToken || null);
-    } else {
-      console.log('No songs found for this member.');
-    }
-    setLoading(false);
-  })
-  .catch((error) => {
-    console.error('Error fetching songs:', error);
-    setLoading(false);
-  });
   }
+
+  const loadMoreSongs = () => {
+    if (!loading && nextPageToken) {
+      fetchSongs(member.name.toLowerCase());
+    }
+  };
 
   return (
     <ImageBackground
-      source={require('./assets/background.jpg')}
-      style={styles.backgroundImage}
-      blurRadius={5}
-    >
-      <Animated.View style={{ flex: 1 }}>
-        <View style={styles.playlistContainer}>
-          <Text style={styles.playlistIdText}>
-            Playlist by: {member.name || 'Unknown'}
-          </Text>
-          <View style={{ flex: 1, width: '100%' }}></View>
-          <ScrollView key={songs.length} contentContainerStyle={styles.playlist}>
-            {songs.length > 0 ? (
-              songs.map((song, index) => (
-                <TouchableOpacity
-                  key={index}
-                  style={styles.songItem}
-                  onPress={() =>
-                    navigation.navigate('Player', {
-                      song,
-                      memberImage: member.image,
-                      songs,
-                    })
-                  }
-                >
-                  <Text style={styles.songTitle}>{song.title}</Text>
-                </TouchableOpacity>
-              ))
-            ) : (
-              !loading && <Text style={styles.noSongsText}>No songs available.</Text>
-            )}
-
-            {loading && <ActivityIndicator size="large" color="#fff" />}
-          </ScrollView>
-        </View>
-      </Animated.View>
-    </ImageBackground>
-  );
+    source={require('./assets/background.jpg')}
+    style={styles.backgroundImage}
+    blurRadius={5}
+  >
+    <Animated.View style={{ flex: 1 }}>
+      <View style={styles.playlistContainer}>
+        <Text style={styles.playlistIdText}>
+          Playlist by: {member.name || 'Unknown'}
+        </Text>
+        <FlatList
+          data={songs}
+          keyExtractor={(item) => item.videoId}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={styles.songItem}
+              onPress={() =>
+                navigation.navigate('Player', {
+                  song: item,
+                  memberImage: member.image,
+                  songs,
+                })
+              }
+            >
+              <Image source={require('./assets/background.jpg')} style={styles.songIcon} />
+              <View style={styles.songInfo}>
+                <Text style={styles.songTitle}>{item.title}</Text>
+                <Text style={styles.songArtist}>{item.artist}</Text>
+              </View>
+             
+            </TouchableOpacity>
+          )}
+          contentContainerStyle={{ paddingBottom: 50 }} 
+          ListFooterComponent={loading ? <ActivityIndicator size="large" color="#fff" /> : null}
+          ListFooterComponentStyle={{ marginBottom: 50 }} 
+          onEndReached={loadMoreSongs}
+          onEndReachedThreshold={0.2} 
+        />
+      </View>
+    </Animated.View>
+  </ImageBackground>
+);
 };
 
 const styles = StyleSheet.create({
@@ -138,42 +151,56 @@ const styles = StyleSheet.create({
     resizeMode: 'cover',
     justifyContent: 'center',
   },
-  playlistContainer: {
+  container: {
     flex: 1,
-    marginTop: 20,
-    marginHorizontal: 15,
-    borderRadius: 15,
-    padding: 10,
+    backgroundColor: '#511A1A',
     alignItems: 'center',
-    justifyContent: 'center',
   },
+  songList: {
+    paddingTop: 20,
+    width: '100%',
 
-  playlist: {
-        flexGrow: 1,
-        paddingBottom: 50,
-        minHeight: 300, // Add a minimum height to ensure visibility
   },
   songItem: {
-    padding: 15,
-    marginVertical: 10,
-    borderRadius: 8,
-    elevation: 5,
+    flexDirection: 'row',
     alignItems: 'center',
-    width: '100%',
+    padding: 15,
+    borderBottomColor: '#333',
+    borderBottomWidth: 1,
   },
-  
+  songIcon: {
+    width: 50,
+    height: 50,
+    marginRight: 15,
+  },
+  songInfo: {
+    flex: 1,
+  },
   songTitle: {
+    color: '#fff',
     fontSize: 16,
+    fontWeight: 'bold',
+  },
+  songArtist: {
+    color: '#bbb',
+    fontSize: 12,
+  },
+  songDuration: {
+    color: '#ddd',
+    fontSize: 14,
+  },
+  noSongsText: {
     color: '#fff',
     textAlign: 'center',
-    fontWeight: 'bold',
-    padding: 5,
-    borderRadius: 5,
+    marginTop: 20,
   },
   playlistIdText: {
+    textAlign: 'center',
+    marginTop: 20,
     color: '#fff',
+    fontSize: 15,
+    marginBottom: 10,
   }
-  
 
 });
 

@@ -53,6 +53,8 @@ const PlayerScreen = ({ route }) => {
     };
   }, [isPlaying]);
 
+
+  
   const rotateInterpolate = rotation.interpolate({
     inputRange: [0, 1],
     outputRange: ['0deg', '360deg'], 
@@ -232,7 +234,7 @@ const styles = StyleSheet.create({
   seekBarContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    width: '80%',
+    width: '90%',
     marginBottom: 10, // Increase bottom margin to move upwards
     position: 'absolute',
     bottom: 200,
