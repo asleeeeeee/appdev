@@ -5,8 +5,6 @@ import { useNavigation } from '@react-navigation/native';
 import React, { useEffect, useState, useRef } from 'react';
 import PlayerScreen from './playerScreen';
 import Playlist from './playlist';
-import { PlayerProvider } from './playerContext';
-import MiniPlayer from './miniPlayer';
 
 
 const members = [
@@ -83,7 +81,7 @@ const VinylScreen = ({ route, navigation }) => {
             <VinylDisc memberImage={member.image} />
             <View style={{ marginTop: 15 }}></View>
             <Text style={styles.memberName}>{member.name}</Text>
-            
+
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -99,7 +97,7 @@ const VinylDisc = ({ memberImage }) => {
         style={styles.vinyl} // No need for the transform
         resizeMode="cover"
       />
-     
+
     </View>
   );
 };
@@ -153,7 +151,6 @@ const Stack = createStackNavigator();
 
 const App = () => {
   return (
-    <PlayerProvider>
     <NavigationContainer>
       <Stack.Navigator screenOptions={{
         headerTintColor: '#000',
@@ -163,13 +160,13 @@ const App = () => {
         <Stack.Screen name="VinylScreen" component={VinylScreen} options={{ title: 'Member Playlist' }} />
         <Stack.Screen name="Playlist" component={Playlist} options={{ title: 'Playlist' }} />
         <Stack.Screen name="Player" component={PlayerScreen} options={{ title: 'Player' }} />
-      
-          <Stack.Screen name="PlayerScreen" component={PlayerScreen} />
-       
+
+        <Stack.Screen name="PlayerScreen" component={PlayerScreen} />
+
       </Stack.Navigator>
-      <MiniPlayer />
+
     </NavigationContainer>
-    </PlayerProvider>
+
   );
 };
 
@@ -288,7 +285,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#3B4144',
     justifyContent: 'center',
     alignItems: 'center',
-    
+
   },
   vinylCenter: {
     width: 20,
@@ -299,7 +296,7 @@ const styles = StyleSheet.create({
     borderWidth: 2, // Set the width of the border
     borderColor: '#000', // Set the color of the border (e.g., orange)
   },
- 
+
   vinylImage: {
     width: 80,
     height: 80,

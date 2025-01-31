@@ -67,6 +67,7 @@ const Playlist = ({ route, navigation }) => {
       const newSongs = data.items.map((item) => ({
         title: item.snippet.title,
         videoId: item.snippet.resourceId.videoId,
+        artist: item.snippet.videoOwnerChannelTitle || 'Unknown Artist', 
       }));
 
       setSongs((prev) => {
@@ -99,7 +100,7 @@ const Playlist = ({ route, navigation }) => {
       <Animated.View style={{ flex: 1 }}>
         <View style={styles.playlistContainer}>
           <Text style={styles.playlistIdText}>
-            Playlist for: {member.name || 'Unknown'}
+            Playlist by: {member.name || 'Unknown'}
           </Text>
           <View style={{ flex: 1, width: '100%' }}></View>
           <ScrollView key={songs.length} contentContainerStyle={styles.playlist}>

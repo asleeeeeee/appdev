@@ -1,77 +1,65 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image, Animated, setCurrentSong } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image, Animated } from 'react-native';
 import YouTubeIframe from 'react-native-youtube-iframe';
 import Slider from '@react-native-community/slider';
 import Icon from 'react-native-vector-icons/FontAwesome';
-import { usePlayer } from './playerContext';
 
-const PlayerScreen = ({ route}) => {
+const PlayerScreen = ({ route }) => {
   const { song, memberImage, songs } = route.params;
   const [isPlaying, setIsPlaying] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(songs.findIndex(s => s.videoId === song.videoId));
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [lastRotation, setLastRotation] = useState(0); 
+  const [isLoading, setIsLoading] = useState(true);
   const playerRef = useRef(null);
-  const { setCurrentSong, setIsPlaying: setPlayerIsPlaying } = usePlayer(); // Destructure from context
-
+  
   const rotation = useRef(new Animated.Value(0)).current;
   const intervalRef = useRef(null);
 
   useEffect(() => {
     if (song) {
-      setIsPlaying(true);  // Automatically start playing the song when this screen loads
+      setIsPlaying(true);  
     }
-  }, [song, setIsPlaying]);
-  
-  useEffect(() => {
-    setCurrentSong(song);
-    setIsPlaying(true);
-  }, [song, setCurrentSong, setIsPlaying]);
+  }, [song]);
 
   useEffect(() => {
     if (isPlaying) {
-      // Start or resume the rotation animation when the song is playing
       Animated.loop(
         Animated.timing(rotation, {
-          toValue: rotation._value + 1, // Keep adding 1 to the current value
-          duration: 3000, // Faster rotation (e.g., 3000ms for 360 degree rotation)
+          toValue: rotation._value + 1, 
+          duration: 3000, 
           useNativeDriver: true,
         })
       ).start();
     } else {
-      // Ensure rotation continues without resetting when paused
       rotation.stopAnimation();
     }
-  
-    // Start the interval to update current time
+
     if (isPlaying) {
       intervalRef.current = setInterval(() => {
         if (playerRef.current) {
-          playerRef.current.getCurrentTime().then(setCurrentTime);
+          playerRef.current.getCurrentTime().then((currentTimeVal) => {
+            setCurrentTime(currentTimeVal);
+          });
         }
-      }, 100); // Update every 100ms
+      }, 100);
     } else {
-      clearInterval(intervalRef.current); // Clear the interval when not playing
+      clearInterval(intervalRef.current);
     }
-  
-    // Cleanup on unmount
+
     return () => {
       clearInterval(intervalRef.current);
       rotation.stopAnimation();
     };
   }, [isPlaying]);
-  
-  // Interpolation for rotation
+
   const rotateInterpolate = rotation.interpolate({
     inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'], // Full rotation
+    outputRange: ['0deg', '360deg'], 
   });
-  
 
   const togglePlayPause = () => {
     setIsPlaying(!isPlaying);
-    setPlayerIsPlaying(!isPlaying); // Update playing state in context
   };
 
   const playNext = () => {
@@ -105,6 +93,16 @@ const PlayerScreen = ({ route}) => {
     return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
   };
 
+  const onPlayerReady = async () => {
+    if (playerRef.current) {
+      const videoDuration = await playerRef.current.getDuration();  // Get the actual video duration
+      setDuration(videoDuration);  // Set the accurate duration
+      setIsLoading(false);  // Once we have the duration, set loading to false
+    }
+  };
+
+
+
   return (
     <View style={styles.container}>
       <View style={styles.vinylContainer}>
@@ -115,7 +113,11 @@ const PlayerScreen = ({ route}) => {
         <View style={styles.innerVinylCenter}></View>
       </View>
 
-      <Text style={styles.songTitle}>{currentSong.title}</Text>
+      <Text style={styles.songTitle}>{currentSong?.title}</Text>
+      <Text style={styles.artistText}>{currentSong.artist}</Text>
+
+
+
 
       <YouTubeIframe
         ref={playerRef}
@@ -125,12 +127,9 @@ const PlayerScreen = ({ route}) => {
         onChangeState={(state) => {
           if (state === 'ended') playNext();
         }}
-        onReady={() => {
-          playerRef.current?.getDuration().then(setDuration);
-        }}
+        onReady={onPlayerReady}  // Call onPlayerReady when the video is ready
       />
 
-      {/* Seek Bar (Slider) */}
       <View style={styles.seekBarContainer}>
         <Text style={styles.timeText}>{formatTime(currentTime)}</Text>
         <Slider
@@ -147,17 +146,15 @@ const PlayerScreen = ({ route}) => {
       </View>
 
       <View style={styles.controls}>
-         {/* Previous Button */}
-         <TouchableOpacity onPress={playPrevious} style={styles.controlButton}>
-                <Icon name="backward" size={30} color="#fff" />
-              </TouchableOpacity>
+        <TouchableOpacity onPress={playPrevious} style={styles.controlButton}>
+          <Icon name="backward" size={30} color="#fff" />
+        </TouchableOpacity>
         <TouchableOpacity onPress={togglePlayPause}>
           <Icon name={isPlaying ? 'pause' : 'play'} size={30} color="#fff" />
         </TouchableOpacity>
-         {/* Next Button */}
-         <TouchableOpacity onPress={playNext} style={styles.controlButton}>
-                <Icon name="forward" size={30} color="#fff" />
-              </TouchableOpacity>
+        <TouchableOpacity onPress={playNext} style={styles.controlButton}>
+          <Icon name="forward" size={30} color="#fff" />
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -209,15 +206,16 @@ const styles = StyleSheet.create({
     color: '#fff',
     marginVertical: 20,
     padding: 20,
+    marginBottom: 3,
   },
   controls: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     width: '70%',
     bottom: 80,
-  
+
   },
-  
+
   innerVinylCenter: {
     width: 20, // Smaller size for the inner center
     height: 20,
@@ -242,13 +240,19 @@ const styles = StyleSheet.create({
   slider: {
     flex: 1,
     height: 40,
-    
+
   },
   timeText: {
     color: '#fff',
     fontSize: 14,
     marginHorizontal: 10,
   },
+  artistText: {
+    fontSize: 16,
+    color: '#aaa',
+   marginBottom: 5,
+  },
+  
 });
 
 export default PlayerScreen;
