@@ -3,6 +3,11 @@
     "name": "act1_appdev",
     "slug": "act1_appdev",
     "version": "1.0.0",
-    "newArchEnabled": true
+    "newArchEnabled": true,
+    "extra": {
+      "eas": {
+        "projectId": "a67e04dd-f97e-40d9-8573-e5bf5e1b4228"
+      }
+    }
   }
 }

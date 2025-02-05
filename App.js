@@ -2,7 +2,7 @@ import { View, Text, Image, ScrollView, StyleSheet, TouchableOpacity, ImageBackg
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { useNavigation } from '@react-navigation/native';
-import React, { useEffect, useState, useRef } from 'react';
+import React, {useState} from 'react';
 import PlayerScreen from './playerScreen';
 import Playlist from './playlist';
 
